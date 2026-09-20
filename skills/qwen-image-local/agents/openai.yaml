@@ -1,0 +1,4 @@
+interface:
+  display_name: "Qwen 本地图像工作台"
+  short_description: "使用本地 Qwen 模型生成或编辑图片，批量排队并读取任务结果"
+  default_prompt: "使用 $qwen-image-local 将我的图像提示词加入本地队列，生成后检查并展示图片。"

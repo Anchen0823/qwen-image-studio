@@ -17,6 +17,7 @@ def run(spec):
     import torch
     from PIL import Image, ImageOps
     from diffsynth.pipelines.qwen_image_21 import QwenImage21Pipeline, ModelConfig
+    from vae_decode import install_context_decoder
     if not torch.cuda.is_available():
         raise RuntimeError('未检测到可用的 NVIDIA CUDA 显卡。')
     root = base / 'models/Qwen/Qwen-Image-2.1'
@@ -38,6 +39,7 @@ def run(spec):
         configs.append(ModelConfig(path=files, **config))
     pipe = QwenImage21Pipeline.from_pretrained(torch_dtype=torch.bfloat16, device='cuda',
         model_configs=configs, processor_config=ModelConfig(path=str(root / 'processor')), vram_limit=limit)
+    install_context_decoder(pipe.vae, lambda text: emit('status', text=text))
     emit('status', text='正在编码提示词 / 参考图')
     def progress(items):
         count = len(items)
@@ -51,8 +53,8 @@ def run(spec):
             reference = ImageOps.exif_transpose(source).convert('RGB')
     image = pipe(prompt=spec['prompt'], width=spec['width'], height=spec['height'],
                  num_inference_steps=spec['steps'], seed=spec['seed'], tiled=True,
-                 # 256px tiles leave periodic color streaks in Qwen 2.1 output.
-                 # 512px tiles retain more context and a 128px overlap on 8GB GPUs.
+                 # These settings apply to reference encoding. Output decoding
+                 # uses context tiles and excludes their artificial boundaries.
                  tile_size=512, tile_stride=384,
                  edit_image=reference, progress_bar_cmd=progress)
     emit('status', text='正在保存图片')

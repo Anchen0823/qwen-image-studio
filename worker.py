@@ -51,6 +51,9 @@ def run(spec):
             reference = ImageOps.exif_transpose(source).convert('RGB')
     image = pipe(prompt=spec['prompt'], width=spec['width'], height=spec['height'],
                  num_inference_steps=spec['steps'], seed=spec['seed'], tiled=True,
+                 # 256px tiles leave periodic color streaks in Qwen 2.1 output.
+                 # 512px tiles retain more context and a 128px overlap on 8GB GPUs.
+                 tile_size=512, tile_stride=384,
                  edit_image=reference, progress_bar_cmd=progress)
     emit('status', text='正在保存图片')
     output = Path(spec['output'])
